@@ -1,0 +1,5 @@
+import {NextResponse} from "next/server";
+import {db,initializeDatabase} from "./../../../../lib/server-db";
+import {createSession,verifyPassword,sessionCookie} from "./../../../../lib/auth";
+export const runtime="nodejs";
+export async function POST(req:Request){initializeDatabase();const b=await req.json().catch(()=>null);if(!b?.username||!b?.password)return NextResponse.json({ok:false,error:"Username and password are required"},{status:400});const user=db.prepare("SELECT id,username,display_name,role,password_hash FROM users WHERE username=?").get(b.username) as any;if(!user||!verifyPassword(b.password,user.password_hash))return NextResponse.json({ok:false,error:"Invalid username or password"},{status:401});const session=createSession(user.id);const r=NextResponse.json({ok:true,data:{username:user.username,displayName:user.display_name,role:user.role}});r.cookies.set(sessionCookie,session.id,{httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite:"lax",path:"/",maxAge:30*86400});return r}

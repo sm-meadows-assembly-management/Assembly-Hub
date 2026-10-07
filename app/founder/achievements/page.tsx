@@ -1,0 +1,13 @@
+'use client';
+import {useEffect,useState} from "react";
+export default function Achievements(){
+ const [items,setItems]=useState<any[]>([]),[members,setMembers]=useState<any[]>([]),[form,setForm]=useState<any>({icon:"🏆"}),[error,setError]=useState(""),[selected,setSelected]=useState("");
+ async function load(){const [a,m]=await Promise.all([fetch("/api/achievements"),fetch("/api/members")]);const aj=await a.json();setItems(aj.data?.achievements||[]);if(m.ok){const mj=await m.json();setMembers(mj.data?.members||[])}} 
+ useEffect(()=>{load()},[]);
+ async function create(){const r=await fetch("/api/achievements",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});const j=await r.json();if(!r.ok){setError(j.error);return}setForm({icon:"🏆"});load()}
+ async function award(){const r=await fetch("/api/achievements/award",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId:selected,achievementId:form.achievementId})});const j=await r.json();if(!r.ok)setError(j.error);else{setSelected("");setForm({...form,achievementId:""});load()}}
+ return <main className="page"><a href="/founder">← Founder Dashboard</a><p className="eyebrow">Achievement Management</p><h1>Achievements 🏆</h1>
+ <section className="card"><h2>Create achievement</h2><input className="input" placeholder="Name" value={form.name||""} onChange={e=>setForm({...form,name:e.target.value})}/><input className="input" placeholder="Icon, e.g. 🌟" value={form.icon} onChange={e=>setForm({...form,icon:e.target.value})}/><textarea className="input" placeholder="Description" value={form.description||""} onChange={e=>setForm({...form,description:e.target.value})}/><input className="input" placeholder="Requirement" value={form.requirement||""} onChange={e=>setForm({...form,requirement:e.target.value})}/><button onClick={create}>+ Create Achievement</button></section>
+ <section className="card"><h2>Award achievement</h2><select className="input" value={selected} onChange={e=>setSelected(e.target.value)}><option value="">Choose member</option>{members.filter(m=>m.role!=="FOUNDER").map(m=><option key={m.id} value={m.id}>{m.display_name}</option>)}</select><select className="input" value={form.achievementId||""} onChange={e=>setForm({...form,achievementId:e.target.value})}><option value="">Choose achievement</option>{items.map(a=><option key={a.id} value={a.id}>{a.icon} {a.name}</option>)}</select><button onClick={award}>Award</button></section>
+ {error&&<p>{error}</p>}<div className="stack">{items.map(a=><section className="card" key={a.id}><div style={{fontSize:30}}>{a.icon}</div><h2>{a.name}</h2><p>{a.description}</p><small>{a.award_count} award(s)</small></section>)}</div></main>
+}
