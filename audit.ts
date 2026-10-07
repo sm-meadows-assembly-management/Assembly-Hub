@@ -1,0 +1,2 @@
+import {randomUUID} from "crypto"; import {db,initializeDatabase} from "./server-db";
+export function audit(userId:string|undefined,action:string,entityType:string,entityId?:string,details?:unknown){initializeDatabase();db.prepare("INSERT INTO audit_logs(id,user_id,action,entity_type,entity_id,details) VALUES(?,?,?,?,?,?)").run(randomUUID(),userId||null,action,entityType,entityId||null,typeof details==='string'?details:JSON.stringify(details||{}));}
